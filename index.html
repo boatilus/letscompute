@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Item Computations</title>
+    <style type="text/css">
+      body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      }
+
+      fieldset {
+        border: none;
+        margin: 0 0 1em 0;
+        padding: 0;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+    <script>
+      numeral.defaultFormat('$0,0.00');
+      
+      let updateDerived = (elem) => {
+        const QTY = elem.value;
+
+        const ITEM_DATA = getItemValues();
+        const SHIP_DATA = getShipperData();
+
+        let totalCost = document.getElementById('total_cost');
+        const ITEM_TOTAL_DOLARS = (QTY * ITEM_DATA.price) / 100;
+        totalCost.innerText =numeral(ITEM_TOTAL_DOLARS).format();
+
+        let totalShip = document.getElementById('total_ship');
+        const SHIPPING_TOTAL_DOLLARS = ((QTY * ITEM_DATA.weightGrams) / 1000) * (SHIP_DATA.pricePerKg / 100) + (SHIP_DATA.fee / 100);
+        totalShip.innerText = numeral(SHIPPING_TOTAL_DOLLARS).format();
+
+        let unitShip = document.getElementById('unit_ship');
+        unitShip.innerText = numeral(SHIPPING_TOTAL_DOLLARS / QTY).format();
+
+        let totalDuty = document.getElementById('total_duty');
+        const DUTY_TOTAL_DOLLARS = ((ITEM_DATA.duty * ITEM_DATA.price) * QTY) / 100;
+        totalDuty.innerText = numeral(DUTY_TOTAL_DOLLARS).format();
+
+        let unitDuty = document.getElementById('unit_duty');
+        unitDuty.innerText = numeral(DUTY_TOTAL_DOLLARS / QTY).format();
+
+        let totalFreightDuty = document.getElementById('total_fu');
+        const FREIGHT_DUTY_TOTAL_DOLLARS = DUTY_TOTAL_DOLLARS + SHIPPING_TOTAL_DOLLARS;
+        totalFreightDuty.innerText = numeral(FREIGHT_DUTY_TOTAL_DOLLARS).format();
+
+        let unitFreightDuty = document.getElementById('unit_fu');
+        unitFreightDuty.innerText = numeral(FREIGHT_DUTY_TOTAL_DOLLARS / QTY).format();
+
+        let totalLanded = document.getElementById('total_landed');
+        const LANDED_TOTAL_DOLLARS = SHIPPING_TOTAL_DOLLARS + DUTY_TOTAL_DOLLARS + (QTY * ITEM_DATA.price / 100);
+        totalLanded.innerText = numeral(LANDED_TOTAL_DOLLARS).format();
+
+        let unitLanded = document.getElementById('unit_landed');
+        unitLanded.innerText = numeral(LANDED_TOTAL_DOLLARS / QTY).format();
+
+        const RESALE_PRICE = parseFloat(document.getElementById('resale_price').value);
+        let totalProfit = document.getElementById('total_profit');
+        const PROFIT_TOTAL_DOLLARS = (RESALE_PRICE * QTY) - LANDED_TOTAL_DOLLARS;
+        totalProfit.innerText =numeral(PROFIT_TOTAL_DOLLARS).format();
+
+        let unitProfit = document.getElementById('unit_profit');
+        unitProfit.innerText =numeral(PROFIT_TOTAL_DOLLARS / QTY).format();
+      }
+
+      let getItemValues = () => {
+        let sku       = document.getElementById('sku');
+        let opts      = sku.getElementsByTagName('option');
+        let selected  = opts[sku.selectedIndex];
+
+        return {
+          price:       parseInt(selected.dataset['price'], 10),
+          duty:        parseFloat(selected.dataset['duty']),
+          weightGrams: parseInt(selected.dataset['weightGrams'], 10)
+        }
+      }
+
+      let getShipperData = () => {
+        let shippers = document.getElementById('shippers');
+        let opts      = shippers.getElementsByTagName('option');
+        let selected  = opts[shippers.selectedIndex];
+
+        return {
+          pricePerKg: parseInt(selected.dataset['pricekg'], 10),
+          fee:        parseInt(selected.dataset['fee'], 10)
+        }
+      }
+
+      let computeBreakEven = () => {
+
+      }
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('ready');
+        
+        updatePrice();
+        updateDerived(document.getElementById('num_units'));
+
+        let numUnits = document.getElementById('num_units');
+        numUnits.addEventListener('keyup', function(event) {
+          updateDerived(event.target);
+        });
+
+        let shipper = document.getElementById('shippers');
+        shippers.addEventListener('change', function(event) {
+          updateDerived(document.getElementById('num_units'));
+        });
+
+        let resalePrice = document.getElementById('resale_price');
+        resalePrice.addEventListener('keyup', function(event) {
+          updateDerived(document.getElementById('num_units'));
+        });
+      });
+
+      let updatePrice = () => {
+        let sku       = document.getElementById('sku');
+        let opts      = sku.getElementsByTagName('option');
+        let selected  = opts[sku.selectedIndex];
+
+        const PRICE = selected.dataset['price'];
+        const DUTY  = selected.dataset['duty'];
+
+        let itemCost = document.getElementById('item_cost');
+        itemCost.value = numeral(PRICE / 100).format();
+
+        let itemDutyPercentage = document.getElementById('item_duty_per');
+        itemDutyPercentage.value = (DUTY * 100) + "%";
+
+        let itemDuty = document.getElementById('item_duty');
+        itemDuty.value = numeral((PRICE * DUTY) / 100).format();
+      }
+    </script>
+  </head>
+
+  <body>
+    <h1>Item Computations</h1>
+
+    <fieldset>
+      <label for="sku">SKU</label>
+      <select id="sku" name="sku">
+        <option data-price="555" data-duty="0.05" data-weight-grams="300">TigerDog</option>
+      </select>
+    </fieldset>
+
+    <p>
+      <label>
+        Item cost
+        <input id="item_cost" type="text" disabled></input>
+      </label>
+    </p>
+
+    <p>
+      <label>
+        Item duty (percentage)
+        <input id="item_duty_per" type="text" disabled></input>
+      </label>
+    </p>
+    
+    <p>
+      <label>
+        Item duty (per unit)
+        <input id="item_duty" type="text" disabled></input>
+      </label>
+    </p>
+
+    <p>
+      <label>
+        Number of units
+        <input id="num_units" name="num_units" type="number" value="100">
+      </label>
+    </p>
+
+    <p>
+      <label>
+        Resale price (in dollars)
+        <input id="resale_price" name="resale_price" type="number" value="10.00">
+      </label>
+    </p>
+
+    <hr>
+    <fieldset>
+      <label for="shippers">Shipper</label>
+      <select id="shippers" name="shippers">
+        <option data-pricekg="900" data-fee="0">Adele's Shipping Co.</option>
+        <option data-pricekg="500" data-fee="20000">Lightning Pepe Shipping Co.</option>
+      </select>
+    </fieldset>
+
+    <p>Item cost total: <strong id="total_cost"></strong></p>
+    <p>Shipping total: <strong id="total_ship"></strong></p>
+    <p>Shipping/unit: <strong id="unit_ship"></strong></p>
+    <p>Duty total: <strong id="total_duty"></strong></p>
+    <p>Duty/unit: <strong id="unit_duty"></strong></p>
+    <p>Freight+Duty total: <strong id="total_fu"></strong></p>
+    <p>Freight+Duty/unit: <strong id="unit_fu"></strong></p>
+    <p>Landed total: <strong id="total_landed"></strong></p>
+    <p>Landed/unit: <strong id="unit_landed"></strong></p>
+    <p>Profit total: <strong id="total_profit"></strong></p>
+    <p>Profit/unit: <strong id="unit_profit"></strong></p>
+
+    <!--<hr>
+    <h2>Shipper Comparison</h2>
+    <p>Break-even point among all: <strong id="break_even"></strong></p>-->
+  </body>
+</html>
